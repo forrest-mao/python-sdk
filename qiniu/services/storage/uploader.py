@@ -53,7 +53,7 @@ def put_file(up_token, key, file_path, params=None,
     with open(file_path, 'rb') as input_stream:
         if size > config._BLOCK_SIZE * 2:
             ret, info = put_stream(up_token, key, input_stream, size, params,
-                                   mime_type, progress_handler,
+                                   mime_type, progress_handler=0.0,
                                    upload_progress_recorder=upload_progress_recorder,
                                    modify_time=(int)(os.path.getmtime(file_path)))
         else:
@@ -96,6 +96,10 @@ def put_stream(up_token, key, input_stream, data_size, params=None,
     task = _Resume(up_token, key, input_stream, data_size, params, mime_type,
                    progress_handler, upload_progress_recorder, modify_time)
     return task.upload()
+
+
+def progress_handler(progresses, size):
+    return progresses * 1.0 / size
 
 
 class _Resume(object):
@@ -173,8 +177,7 @@ class _Resume(object):
             self.blockStatus.append(ret)
             offset += length
             self.record_upload_progress(offset)
-            if(callable(self.progress_handler)):
-                self.progress_handler(((len(self.blockStatus) - 1) * config._BLOCK_SIZE)+length, self.size)
+            print(progress_handler(((len(self.blockStatus) - 1) * config._BLOCK_SIZE)+length, self.size))
         return self.make_file(host)
 
     def make_block(self, block, block_size, host):
